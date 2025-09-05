@@ -36,15 +36,15 @@ impl AtspiServer {
 
 #[tool_router(router = tool_router)]
 impl AtspiServer {
-    #[tool(name = "current_apps", description = "Return a list of running applications")]
-    pub async fn echo(
-        &self,
-        params: Parameters<EchoRequest>,
-    ) -> Result<Json<EchoResponse>, String> {
-        Ok(Json(EchoResponse {
-            echoed: params.0.text,
-        }))
-    }
+    // #[tool(name = "current_apps", description = "Return a list of running applications")]
+    // pub async fn echo(
+    //     &self,
+    //     params: Parameters<EchoRequest>,
+    // ) -> Result<Json<EchoResponse>, String> {
+    //     Ok(Json(EchoResponse {
+    //         echoed: params.0.text,
+    //     }))
+    // }
 
     #[tool(name = "get_active_frame", description = "Get the name of the active frame, also known as the active window, via atspi")]
     pub async fn get_active_frame(&self) -> String {
@@ -54,7 +54,7 @@ impl AtspiServer {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    eprintln!("Starting Atspi MCP Server...");
+    eprintln!("Running Atspi MCP Server...");
 
     let server = AtspiServer::new();
 
