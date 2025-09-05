@@ -1,22 +1,11 @@
-use atspi_mcp::get_active_frame_name;
+use atspi::connection::set_session_accessibility;
+use atspi_mcp::{get_active_frame_name, get_running_apps};
 use rmcp::{
-    Json, ServiceExt,
-    handler::server::{router::tool::ToolRouter, wrapper::Parameters},
+    ServiceExt,
+    handler::server::{router::tool::ToolRouter},
     tool, tool_handler, tool_router,
     transport::stdio,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub struct EchoRequest {
-    pub text: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub struct EchoResponse {
-    pub echoed: String,
-}
 
 #[derive(Clone)]
 pub struct AtspiServer {
@@ -25,38 +14,37 @@ pub struct AtspiServer {
 
 #[tool_handler(router = self.tool_router)]
 impl rmcp::ServerHandler for AtspiServer {}
-
 impl AtspiServer {
-    pub fn new() -> Self {
-        Self {
+    pub async fn new() -> Result<AtspiServer, Box<dyn std::error::Error>> {
+        Ok(Self {
             tool_router: Self::tool_router(),
-        }
+        })
     }
 }
 
 #[tool_router(router = tool_router)]
 impl AtspiServer {
-    // #[tool(name = "current_apps", description = "Return a list of running applications")]
-    // pub async fn echo(
-    //     &self,
-    //     params: Parameters<EchoRequest>,
-    // ) -> Result<Json<EchoResponse>, String> {
-    //     Ok(Json(EchoResponse {
-    //         echoed: params.0.text,
-    //     }))
-    // }
+    #[tool(name = "running_app", description = "Return a list of running applications")]
+    pub async fn get_running_apps(
+        &self,
+    ) -> String {
+        get_running_apps().await.unwrap()
+    }
 
     #[tool(name = "get_active_frame", description = "Get the name of the active frame, also known as the active window, via atspi")]
     pub async fn get_active_frame(&self) -> String {
-        get_active_frame_name().await.unwrap_or("unknown".to_string())
+        get_active_frame_name().await.unwrap_or_else(|error | error.to_string())
     }
 }
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("Running Atspi MCP Server...");
 
-    let server = AtspiServer::new();
+	set_session_accessibility(true).await?;
+
+    let server = AtspiServer::new().await.unwrap();
 
     let service = server.serve(stdio()).await?;
     service.waiting().await?;
